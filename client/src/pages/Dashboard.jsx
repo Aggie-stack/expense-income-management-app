@@ -1,152 +1,98 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement
-} from 'chart.js'
-import { Pie, Bar, Line } from 'react-chartjs-2'
+import React, { useState, useEffect } from "react";
+import SavingsChart from "../components/SavingsChart";
+import NotesCard from "../components/NotesCard";
+import TransactionTable from "../components/TransactionTable";
+import AddTransactionForm from "../components/AddTransactionForm";
+import { calculateTotal } from "../utils/calculations";
 
-// Register Chart.js components
-ChartJS.register(
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement
-)
+const Dashboard = () => {
+  // ✅ Default to current month automatically
+  const currentMonth = new Date().toISOString().slice(0, 7);
 
-export default function Dashboard() {
-  const [summary, setSummary] = useState({ income: 0, expense: 0 })
-  const [byCategory, setByCategory] = useState([])
+  // ✅ Load from localStorage safely
+  const [transactions, setTransactions] = useState(() => {
+    const saved = localStorage.getItem("transactions");
+    return saved ? JSON.parse(saved) : [];
+  });
 
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+
+  // ✅ Persist automatically
   useEffect(() => {
-    const year = new Date().getFullYear()
-    const month = new Date().getMonth() + 1
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
 
-    // Monthly summary
-    api.get(`/summary/month/${year}/${month}`)
-      .then(res => {
-        setSummary({
-          income: res.data.income,
-          expense: res.data.expense
-        })
-      })
+  // ✅ Add
+  const handleAdd = (transaction) => {
+    setTransactions((prev) => [...prev, transaction]);
+  };
 
-    // Category expenses
-    api.get('/transactions')
-      .then(res => {
-        const map = {}
+  // ✅ Delete
+  const handleDelete = (id) => {
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  };
 
-        res.data.forEach(t => {
-          if (t.type === 'expense') {
-            map[t.category] =
-              (map[t.category] || 0) + parseFloat(t.amount)
-          }
-        })
+  // ✅ Edit
+  const handleEdit = (updated) => {
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === updated.id ? updated : t))
+    );
+  };
 
-        setByCategory(
-          Object.entries(map).map(([category, amount]) => ({
-            category,
-            amount
-          }))
-        )
-      })
-  }, [])
+  // ✅ Filter by selected month
+  const filtered = transactions.filter(
+    (t) =>
+      t.date &&
+      typeof t.date === "string" &&
+      t.date.startsWith(selectedMonth)
+  );
 
-  /* ---------------- CHART DATA ---------------- */
+  // ✅ Auto-route by type
+  const income = filtered.filter((t) => t.type === "income");
+  const expenses = filtered.filter((t) => t.type === "expense");
 
-  const pieData = {
-    labels: byCategory.map(b => b.category),
-    datasets: [
-      {
-        data: byCategory.map(b => b.amount)
-      }
-    ]
-  }
-
-  const barData = {
-    labels: byCategory.map(b => b.category),
-    datasets: [
-      {
-        label: 'Expenses',
-        data: byCategory.map(b => b.amount)
-      }
-    ]
-  }
-
-  const lineData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        label: 'Expense Trend',
-        data: [1200, 900, 1400, 1100, 1600, 1300],
-        tension: 0.4
-      }
-    ]
-  }
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false
-  }
+  // ✅ Totals
+  const totalIncome = calculateTotal(income);
+  const totalExpenses = calculateTotal(expenses);
 
   return (
-    <div>
-      <h2>Dashboard</h2><br></br>
+    <div className="container">
+      <header className="header">
+        <h1>Personal Finance Tracker</h1>
 
-      {/* SUMMARY CARDS */}
-      <div>
-        <div>
-          <div>Income this month = {summary.income}</div>
-        </div><br></br>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+        />
+      </header>
 
-        <div>
-          <div>Expense this month = {summary.expense}</div>
-        </div> <br></br>
+      <AddTransactionForm onAdd={handleAdd} />
 
-        <div>
-          <div>Budget = Coming soon</div>
+      <div className="content">
+        <div className="left-panel">
+          <SavingsChart income={totalIncome} expenses={totalExpenses} />
+          <NotesCard />
         </div>
-      </div><br></br>
 
-      {/* CHARTS IN ONE ROW */}
-      <div>
-        <h2>Spending by Category</h2>
+        <div className="right-panel">
+          <TransactionTable
+            title="Monthly Income"
+            data={income}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+          />
 
-        <div>
-
-          <div>
-            {byCategory.length ? (
-              <Pie data={pieData} options={chartOptions} />
-            ) : (
-              <p>No data</p>
-            )}
-          </div>
-
-          <div>
-            {byCategory.length ? (
-              <Bar data={barData} options={chartOptions} />
-            ) : (
-              <p>No data</p>
-            )}
-          </div>
-
-          <div>
-            <Line data={lineData} options={chartOptions} />
-          </div>
-
+          <TransactionTable
+            title="Monthly Expenses"
+            data={expenses}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+          />
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+export default Dashboard;
