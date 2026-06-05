@@ -1,43 +1,52 @@
 import React from "react";
 import {
   Chart as ChartJS,
-  LineElement,
+  BarElement,
   CategoryScale,
   LinearScale,
-  PointElement,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 
-ChartJS.register(
-  LineElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  Tooltip,
-  Legend
-);
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-const SavingsChart = ({ income, expenses }) => {
-  const savings = income - expenses;
-
+const SavingsChart = ({ income, expenses, savings }) => {
   const data = {
     labels: ["Income", "Expenses", "Savings"],
     datasets: [
       {
-        label: "Monthly Overview",
-        data: [income, expenses, savings],
-        borderColor: "#4ade80",
-        backgroundColor: "#4ade80",
+        label: "Amount ($)",
+        data: [income, expenses, Math.max(0, savings)],
+        backgroundColor: ["#1d9e75", "#d85a30", "#378add"],
+        borderRadius: 6,
       },
     ],
   };
 
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => `$${ctx.raw.toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      y: {
+        ticks: {
+          callback: (v) => `$${v.toLocaleString()}`,
+        },
+      },
+    },
+  };
+
   return (
     <div className="card dark-card">
-      <h3>Savings </h3>
-      <Line data={data} />
+      <div className="card-title">Overview</div>
+      <Bar data={data} options={options} />
     </div>
   );
 };

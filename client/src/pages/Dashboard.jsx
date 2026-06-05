@@ -6,10 +6,8 @@ import AddTransactionForm from "../components/AddTransactionForm";
 import { calculateTotal } from "../utils/calculations";
 
 const Dashboard = () => {
-  // ✅ Default to current month automatically
   const currentMonth = new Date().toISOString().slice(0, 7);
 
-  // ✅ Load from localStorage safely
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem("transactions");
     return saved ? JSON.parse(saved) : [];
@@ -17,49 +15,39 @@ const Dashboard = () => {
 
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
 
-  // ✅ Persist automatically
   useEffect(() => {
     localStorage.setItem("transactions", JSON.stringify(transactions));
   }, [transactions]);
 
-  // ✅ Add
   const handleAdd = (transaction) => {
     setTransactions((prev) => [...prev, transaction]);
   };
 
-  // ✅ Delete
   const handleDelete = (id) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // ✅ Edit
   const handleEdit = (updated) => {
     setTransactions((prev) =>
       prev.map((t) => (t.id === updated.id ? updated : t))
     );
   };
 
-  // ✅ Filter by selected month
   const filtered = transactions.filter(
-    (t) =>
-      t.date &&
-      typeof t.date === "string" &&
-      t.date.startsWith(selectedMonth)
+    (t) => t.date && typeof t.date === "string" && t.date.startsWith(selectedMonth)
   );
 
-  // ✅ Auto-route by type
   const income = filtered.filter((t) => t.type === "income");
   const expenses = filtered.filter((t) => t.type === "expense");
 
-  // ✅ Totals
   const totalIncome = calculateTotal(income);
   const totalExpenses = calculateTotal(expenses);
+  const savings = totalIncome - totalExpenses;
 
   return (
     <div className="container">
       <header className="header">
         <h1>Personal Finance Tracker</h1>
-
         <input
           type="month"
           value={selectedMonth}
@@ -67,11 +55,29 @@ const Dashboard = () => {
         />
       </header>
 
+      {/* Summary bar */}
+      <div className="summary-bar">
+        <div className="summary-card income-card">
+          <span className="summary-label">Income</span>
+          <span className="summary-value">${totalIncome.toLocaleString()}</span>
+        </div>
+        <div className="summary-card expense-card">
+          <span className="summary-label">Expenses</span>
+          <span className="summary-value">${totalExpenses.toLocaleString()}</span>
+        </div>
+        <div className={`summary-card savings-card ${savings < 0 ? "negative" : ""}`}>
+          <span className="summary-label">Savings</span>
+          <span className="summary-value">
+            {savings < 0 ? "-" : ""}${Math.abs(savings).toLocaleString()}
+          </span>
+        </div>
+      </div>
+
       <AddTransactionForm onAdd={handleAdd} />
 
       <div className="content">
         <div className="left-panel">
-          <SavingsChart income={totalIncome} expenses={totalExpenses} />
+          <SavingsChart income={totalIncome} expenses={totalExpenses} savings={savings} />
           <NotesCard />
         </div>
 
@@ -82,7 +88,6 @@ const Dashboard = () => {
             onDelete={handleDelete}
             onEdit={handleEdit}
           />
-
           <TransactionTable
             title="Monthly Expenses"
             data={expenses}

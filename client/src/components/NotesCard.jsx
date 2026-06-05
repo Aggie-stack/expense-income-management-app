@@ -15,7 +15,6 @@ const NotesCard = () => {
   return (
     <div className="card notes-card">
       <div className="card-title">Notes</div>
-      <div className="notes-content"></div>
       <textarea
         className="sticky-note"
         value={note}

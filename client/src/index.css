@@ -1,50 +1,123 @@
-body {
+* {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
+}
+
+body {
   font-family: Arial, sans-serif;
   background: linear-gradient(to bottom, #5c6575, #1f2733);
   color: #000;
+  min-height: 100vh;
 }
 
 .container {
   padding: 30px;
 }
 
+/* Header */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: white;
+  margin-bottom: 20px;
 }
 
-.date-box {
-  display: flex;
-  gap: 10px;
-}
-
-.month {
-  background: black;
-  color: white;
-  padding: 10px 15px;
+.header input[type="month"] {
+  padding: 8px 12px;
   border-radius: 8px;
-}
-
-.year {
+  border: none;
   background: white;
-  padding: 10px 15px;
-  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
 }
 
+/* Summary bar */
+.summary-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.summary-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summary-value {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.income-card .summary-value  { color: #0f6e56; }
+.expense-card .summary-value { color: #993c1d; }
+.savings-card .summary-value { color: #185fa5; }
+.savings-card.negative .summary-value { color: #a32d2d; }
+
+/* Add form */
+.add-form-card {
+  margin-bottom: 24px;
+}
+
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.form-grid select,
+.form-grid input {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.form-grid button {
+  padding: 8px 20px;
+  background: #443f44;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.form-grid button:hover {
+  background: #2d2a2d;
+}
+
+/* Layout */
 .content {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 20px;
-  margin-top: 30px;
+  margin-top: 10px;
 }
 
+/* Cards */
 .card {
   background: white;
   border-radius: 12px;
   padding: 20px;
+  margin-bottom: 16px;
 }
 
 .dark-card {
@@ -52,64 +125,117 @@ body {
   color: white;
 }
 
-.chart-placeholder {
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.dark-card .card-title {
+  background: #2d3748;
 }
 
-.notes {
-  margin-top: 20px;
-}
-
-.sticky-note {
-  background: #fff3a5;
-  padding: 15px;
-  width: 200px;
-  margin-top: 10px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-th, td {
-  text-align: left;
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-}
-
-.total {
-  margin-top: 10px;
-  font-weight: bold;
-  text-align: right;
-}
-
-.tag {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  color: white;
-}
-
-.salary { background: green; }
-.freelance { background: lightgreen; color: black; }
-.rent { background: pink; }
-.utilities { background: orange; }
-.retail { background: lightblue; color: black; }
-
-/* Black title bar */
+/* Card title bar */
 .card-title {
   background: #443f44;
   color: #fff;
   display: inline-block;
-  padding: 10px 20px;
+  padding: 8px 18px;
   border-radius: 8px;
   font-weight: 600;
   margin-bottom: 15px;
-  font-size: 16px;
+  font-size: 14px;
 }
 
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+td input {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 13px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+td button {
+  margin-right: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #443f44;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+td button:hover {
+  background: #2d2a2d;
+}
+
+.total {
+  margin-top: 12px;
+  font-weight: 600;
+  text-align: right;
+  font-size: 15px;
+  color: #333;
+}
+
+/* Tags */
+.tag {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  background: #e2e8f0;
+  color: #444;
+}
+
+/* Notes */
+.notes-card .sticky-note {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  background: #fffde7;
+  border: 1px solid #f0e68c;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: Arial, sans-serif;
+  color: #5a4e00;
+}
+
+.empty-msg {
+  font-size: 13px;
+  color: #999;
+  padding: 10px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    grid-template-columns: 1fr;
+  }
+  .summary-bar {
+    grid-template-columns: 1fr;
+  }
+  .form-grid {
+    flex-direction: column;
+  }
+  .form-grid select,
+  .form-grid input,
+  .form-grid button {
+    width: 100%;
+  }
+}
