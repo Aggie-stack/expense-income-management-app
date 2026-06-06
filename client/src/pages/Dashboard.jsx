@@ -5,22 +5,62 @@ import TransactionTable from "../components/TransactionTable";
 import AddTransactionForm from "../components/AddTransactionForm";
 import { calculateTotal } from "../utils/calculations";
 
-const Dashboard = () => {
-  const currentMonth = new Date().toISOString().slice(0, 7);
+const STORAGE_KEY = "finance_transactions_v1";
+const MONTH_KEY   = "finance_selected_month";
 
+// Returns "YYYY-MM" using LOCAL time (not UTC)
+const getLocalMonth = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+const Dashboard = () => {
   const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem("transactions");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+      console.log("[Finance] Loaded from localStorage:", parsed);
+      return parsed;
+    } catch (e) {
+      console.error("[Finance] localStorage load error:", e);
+      return [];
+    }
   });
 
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  // Persist selectedMonth so it survives page refresh
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    return localStorage.getItem(MONTH_KEY) || getLocalMonth();
+  });
 
+  // Save transactions whenever they change
   useEffect(() => {
-    localStorage.setItem("transactions", JSON.stringify(transactions));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      console.log("[Finance] Saved to localStorage. Total:", transactions.length);
+    } catch (e) {
+      console.error("[Finance] localStorage save error:", e);
+    }
   }, [transactions]);
 
+  // Save selectedMonth whenever it changes
+  useEffect(() => {
+    localStorage.setItem(MONTH_KEY, selectedMonth);
+    console.log("[Finance] Saved selectedMonth:", selectedMonth);
+  }, [selectedMonth]);
+
   const handleAdd = (transaction) => {
-    setTransactions((prev) => [...prev, transaction]);
+    console.log("[Finance] handleAdd called with:", transaction);
+
+    // Auto-switch the month picker to match the transaction's date
+    const txMonth = transaction.date.slice(0, 7);
+    console.log("[Finance] Auto-switching selectedMonth to:", txMonth);
+    setSelectedMonth(txMonth);
+
+    setTransactions((prev) => {
+      const next = [...prev, transaction];
+      console.log("[Finance] New transactions array length:", next.length);
+      return next;
+    });
   };
 
   const handleDelete = (id) => {
@@ -33,66 +73,96 @@ const Dashboard = () => {
     );
   };
 
-  const filtered = transactions.filter(
-    (t) => t.date && typeof t.date === "string" && t.date.startsWith(selectedMonth)
-  );
+  const filtered = transactions.filter((t) => {
+    if (!t.date || typeof t.date !== "string") return false;
+    return t.date.startsWith(selectedMonth);
+  });
 
-  const income = filtered.filter((t) => t.type === "income");
+  console.log("[Finance] Rendering. transactions:", transactions.length, "filtered:", filtered.length, "month:", selectedMonth);
+
+  const income   = filtered.filter((t) => t.type === "income");
   const expenses = filtered.filter((t) => t.type === "expense");
 
-  const totalIncome = calculateTotal(income);
+  const totalIncome   = calculateTotal(income);
   const totalExpenses = calculateTotal(expenses);
-  const savings = totalIncome - totalExpenses;
+  const savings       = totalIncome - totalExpenses;
+
+  const fmt = (n) =>
+    "$" + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
   return (
-    <div className="container">
-      <header className="header">
-        <h1>Personal Finance Tracker</h1>
-        <input
-          type="month"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-        />
+    <div className="page">
+      <header className="app-header">
+        <div className="app-header-left">
+          <div className="app-logo">💰</div>
+          <div>
+            <h1 className="app-title">Finance Tracker</h1>
+            <p className="app-subtitle">Track income, expenses &amp; savings</p>
+          </div>
+        </div>
+        <div className="app-header-right">
+          <label className="month-label">Month</label>
+          <input
+            type="month"
+            className="month-picker"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          />
+        </div>
       </header>
 
-      {/* Summary bar */}
       <div className="summary-bar">
         <div className="summary-card income-card">
-          <span className="summary-label">Income</span>
-          <span className="summary-value">${totalIncome.toLocaleString()}</span>
+          <div className="summary-icon">↑</div>
+          <div>
+            <div className="summary-label">Total Income</div>
+            <div className="summary-value">{fmt(totalIncome)}</div>
+          </div>
         </div>
         <div className="summary-card expense-card">
-          <span className="summary-label">Expenses</span>
-          <span className="summary-value">${totalExpenses.toLocaleString()}</span>
+          <div className="summary-icon">↓</div>
+          <div>
+            <div className="summary-label">Total Expenses</div>
+            <div className="summary-value">{fmt(totalExpenses)}</div>
+          </div>
         </div>
-        <div className={`summary-card savings-card ${savings < 0 ? "negative" : ""}`}>
-          <span className="summary-label">Savings</span>
-          <span className="summary-value">
-            {savings < 0 ? "-" : ""}${Math.abs(savings).toLocaleString()}
-          </span>
+        <div className={`summary-card ${savings < 0 ? "negative-card" : "savings-card"}`}>
+          <div className="summary-icon">🏦</div>
+          <div>
+            <div className="summary-label">Net Savings</div>
+            <div className="summary-value">{savings < 0 ? "−" : ""}{fmt(savings)}</div>
+          </div>
+        </div>
+        <div className="summary-card count-card">
+          <div className="summary-icon">📋</div>
+          <div>
+            <div className="summary-label">Transactions</div>
+            <div className="summary-value">{filtered.length}</div>
+          </div>
         </div>
       </div>
 
       <AddTransactionForm onAdd={handleAdd} />
 
-      <div className="content">
+      <div className="content-grid">
         <div className="left-panel">
           <SavingsChart income={totalIncome} expenses={totalExpenses} savings={savings} />
           <NotesCard />
         </div>
-
         <div className="right-panel">
           <TransactionTable
             title="Monthly Income"
             data={income}
             onDelete={handleDelete}
             onEdit={handleEdit}
+            type="income"
           />
           <TransactionTable
             title="Monthly Expenses"
             data={expenses}
             onDelete={handleDelete}
             onEdit={handleEdit}
+            type="expense"
           />
         </div>
       </div>
